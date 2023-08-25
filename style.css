@@ -1,0 +1,38 @@
+body {
+  background-color: #1a1a1a;
+  color: #DB0B;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+input {
+  background-color: #333;
+  color: #FCF5F5;
+  border: none;
+  padding: 10px;
+  font-size: 1em;
+  width: 200px;
+}
+
+button {
+  background-color: #B40E0E;
+  color: #f5f5f5;
+  border: none;
+  padding: 10px;
+  margin-top: 20px;
+  font-size: 1em;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #555;
+}
+
+p5Canvas {
+  display: block;
+  margin-top: 50px;
+}
+
+.slider {
+  width: 200px;
+  margin-top: 20px;
+}
