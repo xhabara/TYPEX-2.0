@@ -15,6 +15,8 @@ let drawings = [];
 let oscillatorActive = false;
 let oscButton;
 let osc;
+let recorder, soundFile, blob;
+
 let buttons = [
   { x: 370, y: 55, w: 110, h: 30, color: 'red', label: "DO NOT CLICK!!", action: doNotPress },
   { x: 320, y: 55, w: 45, h: 30, color: '#285164', label: "Undo", action: undoLastStep },
@@ -87,6 +89,7 @@ function preload() {
   sounds["Forbidden4"] = loadSound("forbidden4.mp3");
   sounds["Forbidden5"] = loadSound("forbidden5.mp3");
 }
+
 function setup() {
   createCanvas(1100, 400);
   synth = new p5.PolySynth();
@@ -94,6 +97,12 @@ function setup() {
   reverb = new p5.Reverb();
   delay = new p5.Delay();
   lfo = new p5.Oscillator("sine");
+
+ 
+recorder = new p5.SoundRecorder();
+recorder.setInput();  // Connect the recorder to the master output
+soundFile = new p5.SoundFile();
+
 
 
 
@@ -127,6 +136,10 @@ function clearSequence() {
   background(255);
   drawings = [];
 }
+
+
+
+
 
 function draw() {
   background(255);
@@ -215,6 +228,10 @@ function playSound(keyName) {
     delay.process(osc, delayTime, 0.5, 2300);
     reverb.process(osc, 2, 2);
   }
+  
+  if (isPlaying) {
+  recorder.record(soundFile);
+}
 }
 
 function toggleOscillator() {
@@ -229,18 +246,41 @@ function toggleOscillator() {
   }
 }
 
+
+function startRecording(audioStream) {
+  mediaRecorder = new MediaRecorder(audioStream);
+  mediaRecorder.ondataavailable = event => {
+    audioChunks.push(event.data);
+  };
+  
+  mediaRecorder.onstop = () => {
+    let audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+    let audioUrl = URL.createObjectURL(audioBlob);
+    // Do something with audioUrl
+  };
+  
+  mediaRecorder.start();
+}
+
+
 function toggleSequence() {
   let sequenceButton = buttons.find(btn => btn.label === "PLAY SEQUENCE");
 
   if (isPlaying) {
     isPlaying = false;
-    sequenceButton.active = false; 
+    sequenceButton.active = false;
+    recorder.stop();  // Stop recording
+    saveSound(soundFile, 'mySequence.wav');  // Save the recorded sound
   } else {
     isPlaying = true;
-    sequenceButton.active = true; 
+    sequenceButton.active = true;
+    recorder.record(soundFile);  // Start recording into soundFile
     playSequence();
   }
 }
+
+
+
 function playSequence() {
   if (!isPlaying) return;
 
@@ -288,10 +328,25 @@ function doNotPress() {
   // Random Delay
   delay.process(sound, random(0.2, 0.5), random(0.3, 0.7), 2300);
 
-  sound.setVolume(2);
+  sound.setVolume(1);
   sound.play();
 }
 
 function windowResized() {
   resizeCanvas(1100, 400);
 }
+
+function stopAndSave() {
+  isPlaying = false;
+  let sequenceButton = buttons.find(btn => btn.label === "PLAY SEQUENCE");
+  sequenceButton.active = false;
+
+  recorder.stop();  // Stop recording into soundFile
+  saveSoundFile();  // Save the recorded sound
+}
+
+function saveSoundFile() {
+  soundFile.save('Xhabarabot_Typex2_Sequence.wav');
+}
+
+
