@@ -21,8 +21,10 @@ let buttons = [
   { x: 370, y: 55, w: 110, h: 30, color: 'red', label: "DO NOT CLICK!!", action: doNotPress },
   { x: 320, y: 55, w: 45, h: 30, color: '#285164', label: "Undo", action: undoLastStep },
   { x: 320, y: 20, w: 45, h: 30, color: '#607D8B', label: "Reset", action: clearSequence },
-  { x: 485, y: 20, w: 40, h: 30, color: 'rgb(15,15,15)', label: "OSC", action: toggleOscillator },
+  { x: 485, y: 55, w: 40, h: 30, color: 'rgb(15,15,15)', label: "OSC", action: toggleOscillator },
   { x: 370, y: 20, w: 110, h: 30, color: 'rgb(17,17,17)', label: "PLAY SEQUENCE", action: toggleSequence, active: false },
+{ x: 485, y: 20, w: 90, h: 30, color: 'rgb(255,0,0)', label: "STOP & SAVE", action: stopAndSave }
+
 ];
 
 
@@ -348,5 +350,4 @@ function stopAndSave() {
 function saveSoundFile() {
   soundFile.save('Xhabarabot_Typex2_Sequence.wav');
 }
-
 
