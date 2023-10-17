@@ -1,3 +1,7 @@
+//Typex 2.0 Created by Rully Shabara 2023
+
+
+
 let sounds = {};
 let lengthSlider;
 let sequence = [];
@@ -16,17 +20,67 @@ let oscillatorActive = false;
 let oscButton;
 let osc;
 let recorder, soundFile, blob;
+let compressor;
+let hasTyped = false;
+let saveButtonState = "STOP & SAVE";
 
 let buttons = [
-  { x: 370, y: 55, w: 110, h: 30, color: 'red', label: "DO NOT CLICK!!", action: doNotPress },
-  { x: 320, y: 55, w: 45, h: 30, color: '#285164', label: "Undo", action: undoLastStep },
-  { x: 320, y: 20, w: 45, h: 30, color: '#607D8B', label: "Reset", action: clearSequence },
-  { x: 485, y: 55, w: 40, h: 30, color: 'rgb(15,15,15)', label: "OSC", action: toggleOscillator },
-  { x: 370, y: 20, w: 110, h: 30, color: 'rgb(17,17,17)', label: "PLAY SEQUENCE", action: toggleSequence, active: false },
-{ x: 485, y: 20, w: 90, h: 30, color: 'rgb(255,0,0)', label: "STOP & SAVE", action: stopAndSave }
-
+  {
+    x: 370,
+    y: 55,
+    w: 110,
+    h: 30,
+    color: "red",
+    label: "DO NOT CLICK!!",
+    action: doNotPress,
+  },
+  {
+    x: 320,
+    y: 55,
+    w: 45,
+    h: 30,
+    color: "#285164",
+    label: "Undo",
+    action: undoLastStep,
+  },
+  {
+    x: 320,
+    y: 20,
+    w: 45,
+    h: 30,
+    color: "#607D8B",
+    label: "Reset",
+    action: clearSequence,
+  },
+  {
+    x: 485,
+    y: 55,
+    w: 40,
+    h: 30,
+    color: "rgb(15,15,15)",
+    label: "OSC",
+    action: toggleOscillator,
+  },
+  {
+    x: 370,
+    y: 20,
+    w: 110,
+    h: 30,
+    color: "rgb(17,17,17)",
+    label: "PLAY SEQUENCE",
+    action: toggleSequence,
+    active: false,
+  },
+  {
+    x: 485,
+    y: 20,
+    w: 95,
+    h: 30,
+    color: "rgb(255,0,0)",
+    label: "STOP & SAVE",
+    action: stopAndSave,
+  },
 ];
-
 
 let letterFrequencies = {
   KeyA: 440.0, // A4
@@ -93,20 +147,16 @@ function preload() {
 }
 
 function setup() {
-  createCanvas(1100, 400);
+  createCanvas(960, 400);
   synth = new p5.PolySynth();
 
   reverb = new p5.Reverb();
   delay = new p5.Delay();
   lfo = new p5.Oscillator("sine");
 
- 
-recorder = new p5.SoundRecorder();
-recorder.setInput();  // Connect the recorder to the master output
-soundFile = new p5.SoundFile();
-
-
-
+  recorder = new p5.SoundRecorder();
+  recorder.setInput(); // Connect the recorder to the master output
+  soundFile = new p5.SoundFile();
 
   lengthSlider = createSlider(0.1, 0.5, 0.2, 0.01);
   lengthSlider.position(75, 40);
@@ -122,10 +172,20 @@ soundFile = new p5.SoundFile();
 
 function undoLastStep() {
   if (sequence.length > 0) {
-    sequence.pop(); 
-    drawings.pop(); 
+    sequence.pop();
+    drawings.pop();
   }
 
+  const audioContext = getAudioContext();
+  compressor = audioContext.createDynamicsCompressor();
+  compressor.threshold.setValueAtTime(-50, audioContext.currentTime);
+  compressor.knee.setValueAtTime(40, audioContext.currentTime);
+  compressor.ratio.setValueAtTime(12, audioContext.currentTime);
+  compressor.attack.setValueAtTime(0, audioContext.currentTime);
+  compressor.release.setValueAtTime(0.25, audioContext.currentTime);
+
+  // Connect the compressor
+  compressor.connect(audioContext.destination);
 }
 
 function clearSequence() {
@@ -139,34 +199,44 @@ function clearSequence() {
   drawings = [];
 }
 
-
-
-
-
 function draw() {
   background(255);
 
-   buttons.forEach((btn) => {
-    fill(btn.active ? '#607D8B' : btn.color); 
+  if (!hasTyped) {
+    fill(180);
+    textSize(30);
+    text("TYPE LETTERS HERE...", 80, 200);
+  }
+
+  let saveButton = buttons.find(
+    (btn) =>
+      btn.label.startsWith("STOP & SAVE") || btn.label.startsWith("DOWNLOADED")
+  );
+  if (saveButton) {
+    saveButton.label = saveButtonState;
+  }
+
+  buttons.forEach((btn) => {
+    fill(btn.active ? "#607D8B" : btn.color);
     rect(btn.x, btn.y, btn.w, btn.h);
     fill(255);
     textSize(12);
     text(btn.label, btn.x + 5, btn.y + 20);
-     
-      fill('black');
-  text("SOUND LENGTH", 70, 85);
 
-  // Label for delay slider
-  fill('black');
-  text("DELAY:", 635, 37);
+    fill("black");
+    text("SOUND LENGTH", 70, 85);
 
-  // Label for LFO frequency slider
-  fill('black');
-  text("LFO:", 635, 73);
+    // Label for delay slider
+    fill("black");
+    text("DELAY:", 635, 37);
+
+    // Label for LFO frequency slider
+    fill("black");
+    text("LFO:", 635, 73);
   });
 
   let rowHeight = 20;
-  let rightmostX = 900; 
+  let rightmostX = 900;
   let dotsPerRow = Math.floor((rightmostX - 40) / 20);
 
   for (let i = 0; i < sequence.length; i++) {
@@ -176,7 +246,7 @@ function draw() {
     let x = 80 + column * 20;
 
     if (x < rightmostX) {
-      fill(i === currentSequenceIndex ? 'red' : 'rgb(26,26,26)');
+      fill(i === currentSequenceIndex ? "red" : "rgb(26,26,26)");
       noStroke();
       ellipse(x, y, 10, 10);
     }
@@ -185,13 +255,20 @@ function draw() {
 
 function mousePressed() {
   buttons.forEach((btn) => {
-    if (mouseX > btn.x && mouseX < btn.x + btn.w && mouseY > btn.y && mouseY < btn.y + btn.h) {
+    if (
+      mouseX > btn.x &&
+      mouseX < btn.x + btn.w &&
+      mouseY > btn.y &&
+      mouseY < btn.y + btn.h
+    ) {
       btn.action();
     }
   });
 }
 
 function keyPressed() {
+  hasTyped = true;
+
   let keyName;
   if (keyCode === 32) {
     keyName = "KeySpace";
@@ -205,21 +282,29 @@ function keyPressed() {
 function keyReleased() {
   background(255);
 }
+
 function playSound(keyName) {
   if (keyName === "KeySpace") return;
 
   let soundLength = lengthSlider.value();
   let delayTime = delaySlider.value();
 
+  // Connect sounds to the compressor
   if (sounds[keyName]) {
     let pan = map(mouseX, 0, width, -1, 1);
 
+    sounds[keyName].disconnect(); // Disconnect from master output
+    sounds[keyName].connect(compressor); // Connect to compressor
     sounds[keyName].pan(pan);
     sounds[keyName].play(0, 1, 1, 0, soundLength);
-    delay.process(sounds[keyName], delayTime, 0.5, 2300);
+    delay.process(sounds[keyName], delayTime, 0.3, 2300);
   }
 
+  // Connect the oscillator to the compressor and play it
   if (letterFrequencies[keyName] && oscillatorActive) {
+    osc.disconnect(); // Disconnect from master output
+    osc.connect(compressor); // Connect to compressor
+
     osc.stop();
     let freq = letterFrequencies[keyName];
     osc.freq(freq);
@@ -230,58 +315,61 @@ function playSound(keyName) {
     delay.process(osc, delayTime, 0.5, 2300);
     reverb.process(osc, 2, 2);
   }
-  
+
+  // Connect the recorder to the compressor instead of master output
+  recorder.setInput(compressor);
+
   if (isPlaying) {
-  recorder.record(soundFile);
-}
+    recorder.record(soundFile);
+  }
 }
 
 function toggleOscillator() {
   oscillatorActive = !oscillatorActive;
-  let oscButton = buttons.find(btn => btn.label === "OSC");
+  let oscButton = buttons.find((btn) => btn.label === "OSC");
   if (oscillatorActive) {
-    oscButton.color = "#1E33A5"; 
+    oscButton.color = "#1E33A5";
     osc.start();
   } else {
-    oscButton.color = "rgb(15,15,15)"; 
+    oscButton.color = "rgb(15,15,15)";
     osc.stop();
   }
 }
 
-
 function startRecording(audioStream) {
   mediaRecorder = new MediaRecorder(audioStream);
-  mediaRecorder.ondataavailable = event => {
+  mediaRecorder.ondataavailable = (event) => {
     audioChunks.push(event.data);
   };
-  
+
   mediaRecorder.onstop = () => {
-    let audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+    let audioBlob = new Blob(audioChunks, { type: "audio/wav" });
     let audioUrl = URL.createObjectURL(audioBlob);
-    // Do something with audioUrl
   };
-  
+
   mediaRecorder.start();
 }
 
-
 function toggleSequence() {
-  let sequenceButton = buttons.find(btn => btn.label === "PLAY SEQUENCE");
+  let sequenceButton = buttons.find((btn) => btn.label === "PLAY SEQUENCE");
 
   if (isPlaying) {
     isPlaying = false;
     sequenceButton.active = false;
-    recorder.stop();  // Stop recording
-    saveSound(soundFile, 'mySequence.wav');  // Save the recorded sound
+    recorder.stop(); // Stop recording
+    saveButtonState = "STOP & SAVE";
+    saveSound(soundFile, "Xhabarabot_Typex2_Sequence.wav"); // Save the recorded sound
   } else {
     isPlaying = true;
     sequenceButton.active = true;
-    recorder.record(soundFile);  // Start recording into soundFile
+
+    // Connect the recorder to the compressor instead of master output
+    recorder.setInput(compressor);
+
+    recorder.record(soundFile); // Start recording into soundFile
     playSequence();
   }
 }
-
-
 
 function playSequence() {
   if (!isPlaying) return;
@@ -321,13 +409,8 @@ function doNotPress() {
   let forbiddenSoundName = "Forbidden" + forbiddenSoundIndex;
   let sound = sounds[forbiddenSoundName];
 
-  // Random Pan
   sound.pan(random(-1, 1));
-
-  // Random Rate
   sound.rate(random(0.5, 1.5));
-
-  // Random Delay
   delay.process(sound, random(0.2, 0.5), random(0.3, 0.7), 2300);
 
   sound.setVolume(1);
@@ -339,15 +422,20 @@ function windowResized() {
 }
 
 function stopAndSave() {
-  isPlaying = false;
-  let sequenceButton = buttons.find(btn => btn.label === "PLAY SEQUENCE");
-  sequenceButton.active = false;
-
-  recorder.stop();  // Stop recording into soundFile
-  saveSoundFile();  // Save the recorded sound
+  let sequenceButton = buttons.find((btn) => btn.label === "PLAY SEQUENCE");
+  if (saveButtonState === "STOP & SAVE") {
+    isPlaying = false;
+    sequenceButton.active = false;
+    recorder.stop();
+    saveSoundFile(); // Save the recorded sound
+    saveButtonState = "DOWNLOADED";
+  } else if (saveButtonState === "DOWNLOAD") {
+    saveButtonState = "STOP & SAVE";
+  }
 }
 
 function saveSoundFile() {
-  soundFile.save('Xhabarabot_Typex2_Sequence.wav');
+  soundFile.save("Xhabarabot_Typex2_Sequence.wav");
 }
+
 
