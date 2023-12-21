@@ -1,6 +1,5 @@
-//Typex 2.0 Created by Rully Shabara 2023
-
-
+// Xhabarabot - Typex 2.0
+// Created by Rully Shabara
 
 let sounds = {};
 let lengthSlider;
@@ -155,7 +154,7 @@ function setup() {
   lfo = new p5.Oscillator("sine");
 
   recorder = new p5.SoundRecorder();
-  recorder.setInput(); // Connect the recorder to the master output
+  recorder.setInput(); 
   soundFile = new p5.SoundFile();
 
   lengthSlider = createSlider(0.1, 0.5, 0.2, 0.01);
@@ -168,6 +167,10 @@ function setup() {
 
   lfoSlider = createSlider(0.1, 50, 1, 0.1);
   lfoSlider.position(700, 55);
+  
+  let refreshButton = createButton('Refresh Page');
+  refreshButton.position(10, height + 10); 
+  refreshButton.mousePressed(() => window.location.reload());
 }
 
 function undoLastStep() {
@@ -230,7 +233,7 @@ function draw() {
     fill("black");
     text("DELAY:", 635, 37);
 
-    // Label for LFO frequency slider
+    
     fill("black");
     text("LFO:", 635, 73);
   });
@@ -293,17 +296,17 @@ function playSound(keyName) {
   if (sounds[keyName]) {
     let pan = map(mouseX, 0, width, -1, 1);
 
-    sounds[keyName].disconnect(); // Disconnect from master output
-    sounds[keyName].connect(compressor); // Connect to compressor
+    sounds[keyName].disconnect(); 
+    sounds[keyName].connect(compressor); 
     sounds[keyName].pan(pan);
     sounds[keyName].play(0, 1, 1, 0, soundLength);
     delay.process(sounds[keyName], delayTime, 0.3, 2300);
   }
 
-  // Connect the oscillator to the compressor and play it
+  
   if (letterFrequencies[keyName] && oscillatorActive) {
-    osc.disconnect(); // Disconnect from master output
-    osc.connect(compressor); // Connect to compressor
+    osc.disconnect(); 
+    osc.connect(compressor); 
 
     osc.stop();
     let freq = letterFrequencies[keyName];
@@ -358,7 +361,7 @@ function toggleSequence() {
     sequenceButton.active = false;
     recorder.stop(); // Stop recording
     saveButtonState = "STOP & SAVE";
-    saveSound(soundFile, "Xhabarabot_Typex2_Sequence.wav"); // Save the recorded sound
+    saveSound(soundFile, "Xhabarabot_Typex2_Sequence.wav"); 
   } else {
     isPlaying = true;
     sequenceButton.active = true;
@@ -366,7 +369,7 @@ function toggleSequence() {
     // Connect the recorder to the compressor instead of master output
     recorder.setInput(compressor);
 
-    recorder.record(soundFile); // Start recording into soundFile
+    recorder.record(soundFile); 
     playSequence();
   }
 }
@@ -427,7 +430,7 @@ function stopAndSave() {
     isPlaying = false;
     sequenceButton.active = false;
     recorder.stop();
-    saveSoundFile(); // Save the recorded sound
+    saveSoundFile(); 
     saveButtonState = "DOWNLOADED";
   } else if (saveButtonState === "DOWNLOAD") {
     saveButtonState = "STOP & SAVE";
@@ -437,5 +440,6 @@ function stopAndSave() {
 function saveSoundFile() {
   soundFile.save("Xhabarabot_Typex2_Sequence.wav");
 }
+
 
 
